@@ -177,7 +177,7 @@ class Transaction_List_Table extends WP_List_Table
 							$order_invoice_date = "";
 						}
 
-						$order_delivery_address = $order->get_shipping_first_name().$order->get_shipping_last_name().", ".$order->get_shipping_company().", ".$order->get_shipping_address_1().", "."\n".$order->get_shipping_address_2().$order->get_shipping_city().", ".$order->get_shipping_state().$order->get_shipping_postcode().", ".$order->get_shipping_country();
+						$order_delivery_address = $order->get_shipping_first_name()." ".$order->get_shipping_last_name().", ".$order->get_shipping_company().", ".$order->get_shipping_address_1().", "."\n".$order->get_shipping_address_2().$order->get_shipping_city().", ".$order->get_shipping_state().$order->get_shipping_postcode().", ".$order->get_shipping_country();
 						$order_billing_postcode = $order->get_billing_postcode();
 						$order_total = $order->get_total();
 						//$order_completed_dates = date( "d/m/Y" ,strtotime($order->get_date_completed()) );
