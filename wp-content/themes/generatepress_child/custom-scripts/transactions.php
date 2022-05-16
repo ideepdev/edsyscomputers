@@ -167,10 +167,9 @@ class Transaction_List_Table extends WP_List_Table
 						$order_so_order_number = str_replace("SO", "", $order_order_number);
 						$order_date =date( "d/m/Y" ,strtotime($order->get_date_created()) );
 						$order_date = empty( $order->get_date_created() ) ? '' : date( "d/m/Y" ,strtotime($order->get_date_created()) );
-						// $order_invoice = wcpdf_get_document( 'invoice', $order );
+						$order_invoice = wcpdf_get_document( 'invoice', $order );
 						if ( $order_invoice && $order_invoice->exists() ) {
 							$order_invoice_number = $order_invoice->get_number();
-							//$order_invoice_date = date( "d/m/Y" ,strtotime($order_invoice->get_date()) );
 							$order_invoice_date = empty( $order_invoice->get_date() ) ? '' : date( "d/m/Y" ,strtotime($order_invoice->get_date()) );
 						}else{
 							$order_invoice_number = "";
