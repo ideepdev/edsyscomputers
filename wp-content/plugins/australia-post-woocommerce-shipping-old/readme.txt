@@ -1,9 +1,9 @@
 === ELEX Australia Post WooCommerce Shipping with Tracking Plugin ===
 Contributors: elex
-Version: 3.0.0
+Version: 2.5.8
 Tags: Australia Post, Australia Post Shipping, Shipping rates, Tracking, Shipping, WooCommerce, Wordpress
 Requires at least: 3.0.1
-Tested up to: 5.9
+Tested up to: 5.7
 
 == Description ==
 == Screenshots ==
