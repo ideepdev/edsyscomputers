@@ -141,9 +141,6 @@ function conditionally_hide_payment_gateways( $available_gateways ) {
     return $available_gateways;
 }
 
-
-
-
 //Product description hook 
 add_action( 'wpo_wcpdf_after_item_meta', 'wpo_wcpdf_show_product_description', 10, 3 );
 function wpo_wcpdf_show_product_description ( $template_type, $item, $order ) {
@@ -258,7 +255,12 @@ function custom_orders_list_column_content( $column, $post_id )
     }
         $order_id = $post_id;
     global $wpdb;
-
+	// Get an instance of the WC_Order object
+	$order = wc_get_order( $order_id );
+	$order_data = $order->get_data(); // The Order data
+	
+	//echo $order_data['status'];
+	
     $table_perfixed = $wpdb->prefix . 'comments';
     $results = $wpdb->get_results("
         SELECT *
@@ -270,6 +272,7 @@ function custom_orders_list_column_content( $column, $post_id )
         $position = strpos($note->comment_content,"ErrorNumber: 10");
 		$xero_invoice_id = get_post_meta($post_id, '_xero_invoice_id', true);
 		$xero_payment_id = get_post_meta($post_id, '_xero_payment_id', true);
+		$xero_picking_slip = get_post_meta($post_id, '_picking_slip_generated', true);
 		$position2 = strpos($note->comment_content,"Xero Payment created");
         if (is_numeric($position) && !$xero_invoice_id && !$xero_payment_id){
             echo '<i class="fa fa-exclamation-triangle" style="color:red;" aria-hidden="true" title="'.$note->comment_content.'"></i>';
@@ -280,6 +283,9 @@ function custom_orders_list_column_content( $column, $post_id )
         if ($xero_payment_id){
             echo '<i class="fa fa-credit-card" style="color:green;" aria-hidden="true" title="Payment Created"></i>';
         }
+		if (empty($xero_picking_slip) &&  $order_data['status'] != "completed"){
+            echo '<i class="fa fa-exclamation-triangle" style="color:orange;" aria-hidden="true" title="Picking Slip not created"></i>';
+        } 
     }
         
 }
@@ -1906,4 +1912,33 @@ function my_found_customers($found_customers) {
   return $found_customers ; 
 }
 
+// Display the sku below cart item name
+add_filter( 'woocommerce_cart_item_name', 'display_sku_after_item_name', 5, 3 );
+function display_sku_after_item_name( $item_name, $cart_item, $cart_item_key ) {
+    $product = $cart_item['data']; // The WC_Product Object
+
+    if( is_cart() && $product->get_sku() ) {
+        $item_name .= '<br><span class="item-sku">'. $product->get_sku() . '</span>';
+    }
+    return $item_name;
+}
+
+// Display the sku below under cart item name in checkout
+add_filter( 'woocommerce_checkout_cart_item_quantity', 'display_sku_after_item_qty', 5, 3 );  
+function display_sku_after_item_qty( $item_quantity, $cart_item, $cart_item_key ) {
+    $product = $cart_item['data']; // The WC_Product Object
+
+    if( $product->get_sku() ) {
+        $item_quantity .= '<br><span class="item-sku">SKU'. $product->get_sku() . '</span>';
+    }
+    return $item_quantity;
+}
+
+## Disabled auto updating billing and shipping address from checkout page
+add_filter( 'woocommerce_checkout_update_customer_data', '__return_false' );
+
 include_once("custom-scripts/script.php");
+include_once("lec-scripts/lec.php");
+
+setcookie(TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN);
+if ( SITECOOKIEPATH != COOKIEPATH ) setcookie(TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN);

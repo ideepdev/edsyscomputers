@@ -1,32 +1,32 @@
 <?php
 
 //End code for return only customer user name when we search user in order screen by sachin
-//get transaction report from backend
-class customScripts{
+//get lec report from backend
+class lecScripts{
 
 	## Class constructor
 	public function __construct(){
-		add_action( 'admin_menu', [ $this, 'transaction_report_admin_menu' ],11 );
+		add_action( 'admin_menu', [ $this, 'lec_report_admin_menu' ], 11 );
 	}
 
 	## Create admin menu page 
-	public function transaction_report_admin_menu() {
+	public function lec_report_admin_menu() {
 		global $team_page;
 		add_submenu_page(
 		    'edsys-reports', // Third party plugin Slug 
-		    'Government Report', 
-		    'Government Report', 
+		    'LEC Report', 
+		    'LEC Report', 
 		    'delete_plugins', 
-		    'transaction-report', 
-		    [ $this, 'transaction_report_admin_page' ]
+		    'lec-report', 
+		    [ $this, 'lec_report_admin_page' ]
 		);
-		remove_submenu_page( 'edsys-reports', 'edsys-reports' );
+
 	}
 
 	## Menu page callback
-	public function transaction_report_admin_page(){
-		include_once("transactions.php");
-		$tableObject = new Transaction_List_Table();
+	public function lec_report_admin_page(){
+		include_once("lec-transactions.php");
+		$tableObject = new Lec_List_Table();
 		$tableObject->prepare_items();
 		$args = array(
 			'exclude' => array(1),
@@ -42,21 +42,27 @@ class customScripts{
 					<link href="https://cdn.rawgit.com/harvesthq/chosen/gh-pages/chosen.min.css" rel="stylesheet"/>
 					<form action="" method="get" class="select-range">  
 						<div class="form-title-row">  
-								<h1>Government Report</h1>  
+								<h1>LEC Report</h1>  
 						</div>   
 						<div class="form-row">  
 							<div>  
 								<span>User</span>  
 								<select data-placeholder="Begin typing a name to filter..." multiple class="chosen-select" name="user_id[]">
-									<option>Select User</option>
-								<?php 
-									foreach( $users as $user ){
-										?>               
-											<option value="<?php echo $user->ID ?>" <?php echo ((isset($_GET['user_id']) && in_array($user->ID, $_GET['user_id']) ? 'selected' : '')); ?> ><?php echo $user->user_login; ?></option>
-										<?php
+								<?php
+								    $user_ids = array(149,6843,223,199,273,6917,104,6883,222,201,221,219,6821,257,312,179,6918); 
+									foreach( $user_ids as $user ){
+										$user_details = get_userdata($user);
+										$username = $user_details->user_login;
+										if($username){
+											?>               
+												<option value="<?php echo $user ?>" <?php echo ((isset($_GET['user_id']) && in_array($user, $_GET['user_id']) ? 'selected' : '')); ?> ><?php echo $username; ?></option>
+											<?php
+										}
 									}
 								?> 
-								</select>  
+								</select>
+								  <button type="button" class="chosen-toggle deselect" style="width: auto;">Deselect all</button>
+								  <button type="button" class="chosen-toggle select" style="width: auto;">Select all</button> 
 							</div> 
 							<div>  
 								<span>Date Form</span>  
@@ -69,27 +75,35 @@ class customScripts{
 						</div>     
 						<div class="form-row">  
 							<div style="width: 10%;">  
-								<button class="button button-primary button-large" name="filter-transaction" type="submit">Get Orders</button> 
+								<button class="button button-primary button-large" name="filter-lec" type="submit">Get Orders</button> 
 								<input type="hidden" name="page" value="<?php echo $_GET['page']; ?>"> 
 							</div> 
 						</div>  
 					</form> 
+
 					<script type="text/javascript">
 						$(".chosen-select").chosen({
 							no_results_text: "Oops, nothing found!"
 						});
+						$('.chosen-toggle').each(function(index) {
+						console.log(index);
+						    $(this).on('click', function(){
+						    console.log($(this).parent().find('option').text());
+						         $(this).parent().find('option').prop('selected', $(this).hasClass('select')).parent().trigger('chosen:updated');
+						    });
+						});
 					</script>
 					<br>
 					<br>
-					<?php if( isset( $_GET["user_id"] ) && isset( $_GET['filter-transaction'] ) ){ ?>
-					<table class="wp-list-table widefat fixed striped table-view-list toplevel_page_transaction-report" style="margin-top:40px;">
+					<?php if( isset( $_GET["user_id"] ) && isset( $_GET['filter-lec'] ) ){ ?>
+					<table class="wp-list-table widefat fixed striped table-view-list toplevel_page_lec-report" style="margin-top:40px;">
 						<tr>
 							<td style="width: 70%;">
 								Complete Record Download file:
 							</td>
 							<td>
 								<?php 
-									$FileName_csv = 'edsys_report.csv';
+									$FileName_csv = 'lec_report.csv';
 									$admin_url = admin_url($FileName_csv); 
 								?>
 								<a class="export_csv" href='<?php echo $FileName_csv; ?>'download='<?php echo $FileName_csv; ?>'>
@@ -98,7 +112,7 @@ class customScripts{
 							</td>
 							<td>
 								<?php 
-									$FileName_xls = 'edsys_report.xls';
+									$FileName_xls = 'lec_report.xls';
 									$admin_url = admin_url($FileName_xls); 
 								?>
 								<a href='<?php echo $FileName_xls; ?>' download='<?php echo $FileName_xls; ?>'>
@@ -120,9 +134,13 @@ class customScripts{
 				.tablenav.top{
 					display:none;
 				}
+				button.chosen-toggle {
+				    float: right !important;
+				    margin-right: 11px;
+				}
 				.select-range input{
 					width: 300px;
-    			padding: 5px;
+    			    padding: 5px;
 				}
 				.select-range button{
 					float: left;
@@ -142,13 +160,13 @@ class customScripts{
 					width: 330px !important;
     			padding: 5px !important;
 				}
-				.scrollable-table{
+				/*.scrollable-table{
 					overflow:scroll;
 					width:100%;
-				}
-				.scrollable-table table{
+				}*/
+				/*.scrollable-table table{
 					width: 4279px;
-				}
+				}*/
 				.scrollable-table table th{
 					white-space: nowrap;
 				}
@@ -164,5 +182,5 @@ class customScripts{
 		<?php
 	}
 }
-new customScripts();
+new lecScripts();
 ?>
