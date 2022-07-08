@@ -141,6 +141,9 @@ function conditionally_hide_payment_gateways( $available_gateways ) {
     return $available_gateways;
 }
 
+
+
+
 //Product description hook 
 add_action( 'wpo_wcpdf_after_item_meta', 'wpo_wcpdf_show_product_description', 10, 3 );
 function wpo_wcpdf_show_product_description ( $template_type, $item, $order ) {
@@ -289,7 +292,6 @@ function custom_orders_list_column_content( $column, $post_id )
     }
         
 }
-
 function woocommerce_shop_order_search_order_total( $search_fields ) {
 
   $search_fields[] = 'user_login_id';
@@ -337,7 +339,7 @@ function custom_after_title() {
                   $cate_ides[] = $category->term_id;
                 }   
             }
-            if ((in_array(293, $cate_ides)) || (in_array(287, $cate_ides)) || (in_array(286, $cate_ides)) || (in_array(289, $cate_ides))){
+            if ( (in_array(293, $cate_ides)) || (in_array(287, $cate_ides)) || (in_array(286, $cate_ides)) || (in_array(289, $cate_ides)) || (in_array(316, $cate_ides)) ){
                 $available_on_backorder_text = "Built to order";
 
             }else{
@@ -1503,6 +1505,9 @@ function your_function() {
 			.u-column1.col-1.woocommerce-Address .edit {
 				display: none;
 			}
+            span.sku_wrapper {
+              display: none;
+            }
 		</style>
 	<?php
 }
@@ -1912,13 +1917,21 @@ function my_found_customers($found_customers) {
   return $found_customers ; 
 }
 
+include_once("custom-scripts/script.php");
+include_once("lec-scripts/lec.php");
+add_action( 'woocommerce_single_product_summary', 'dev_designs_show_sku', 5 );
+function dev_designs_show_sku(){
+    global $product;
+    echo 'SKU: ' . $product->get_sku();
+}
+
 // Display the sku below cart item name
 add_filter( 'woocommerce_cart_item_name', 'display_sku_after_item_name', 5, 3 );
 function display_sku_after_item_name( $item_name, $cart_item, $cart_item_key ) {
     $product = $cart_item['data']; // The WC_Product Object
 
     if( is_cart() && $product->get_sku() ) {
-        $item_name .= '<br><span class="item-sku">'. $product->get_sku() . '</span>';
+        $item_name .= '<br><span class="item-sku">SKU: '. $product->get_sku() . '</span>';
     }
     return $item_name;
 }
@@ -1929,16 +1942,10 @@ function display_sku_after_item_qty( $item_quantity, $cart_item, $cart_item_key 
     $product = $cart_item['data']; // The WC_Product Object
 
     if( $product->get_sku() ) {
-        $item_quantity .= '<br><span class="item-sku">SKU'. $product->get_sku() . '</span>';
+        $item_quantity .= '<br><span class="item-sku">SKU: '. $product->get_sku() . '</span>';
     }
     return $item_quantity;
 }
-
-## Disabled auto updating billing and shipping address from checkout page
-add_filter( 'woocommerce_checkout_update_customer_data', '__return_false' );
-
-include_once("custom-scripts/script.php");
-include_once("lec-scripts/lec.php");
 
 setcookie(TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN);
 if ( SITECOOKIEPATH != COOKIEPATH ) setcookie(TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN);
