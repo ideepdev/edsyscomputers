@@ -51,10 +51,13 @@ foreach ( $customer_orders_total_query1 as $customer_orders_total_value1 ) {
 	$total1 += $order_total_value1->get_total();
 }
 
-$searchText = "";
+$searchText = $search_by = "";
 if( isset($_POST['search-orders']) ){
 	$searchText  = stripslashes($_POST['search-id']);
 	$search      = strtolower( $searchText );
+
+  	$search_by = $_POST['search-by'];
+
 	$temp_orders = [];
 	$temp_o      = [];
 	foreach ( $customer_orders->orders as $order ) {
@@ -62,6 +65,7 @@ if( isset($_POST['search-orders']) ){
 		$temp_sku       = [];
 		$temp_name      = [];
 		$partial_search = [];
+		$serial         = [];
 		foreach ( $items as $item ) {
 			$product_id   = $item->get_product_id();
 			$product      = get_product( $product_id );
@@ -71,12 +75,46 @@ if( isset($_POST['search-orders']) ){
 				$partial_search[] = $order->get_id();
 			}
 			$temp_name[] = strtolower( $product->get_name() );
+			if( 
+				!empty($item->get_meta('SERIAL')) &&
+				strtolower( $item->get_meta('SERIAL') ) == $search
+			){
+				$serial[] = $item->get_meta('SERIAL');
+			}
+		}
+
+		// if( 
+		// 	!empty($search_by) &&
+		// 	!empty($search_by) &&
+		// ){
+		// 	continue;
+		// }
+		
+		if( 
+			$search_by == "sku" &&
+			!in_array( $search, $temp_sku )
+		){
+			continue;
+		}
+
+		if( 
+			$search_by == "product-name" &&
+			empty( $partial_search )
+		){
+			continue;
+		}
+
+		if( 
+			$search_by == "serial-number" &&
+			empty( $serial )
+		){
+			continue;
 		}
 
 		if( 
 			!in_array( $search, $temp_sku ) &&
-			empty( $partial_search )
-			// !in_array( $search, $temp_name )
+			empty( $partial_search ) &&
+			empty( $serial )
 		){
 			continue;
 		}
@@ -86,127 +124,172 @@ if( isset($_POST['search-orders']) ){
 
 	$customer_orders->orders = $temp_orders;
 }
+$placeholder = "Search by product name, SKU or serial number";
+switch( $search_by ){
+	case "product-name" :
+		$placeholder = "Search by Product Name";
+	break;
+	case "sku" :
+		$placeholder = "Search by SKU";
+	break;
+	case "serial-number" :
+		$placeholder = "Search by Serial Number";
+	break;
+}
 
 ?>
-	<form action="" method="post">
-		<div class="input-group" style="float:left;width:59%;">
-			<div class="form-outline">
-				<input type="search" id="form1" class="form-control" placeholder="Enter product name or sku" name="search-id" value='<?php echo $searchText; ?>' style="width: 90%;">
-				<button type="submit" class="btn" name="search-orders">
-					<i class="fas fa-search" aria-hidden="true"></i>
-				</button>
-			</div>
+<script>
+function changeSearchPlaceholder( val ){
+	var placeholder = "Search by product name, SKU or serial number";
+	switch( val ){
+		case "product-name" :
+			placeholder = "Search by Product Name";
+		break;
+		case "sku" :
+			placeholder = "Search by SKU";
+		break;
+		case "serial-number" :
+			placeholder = "Search by Serial Number";
+		break;
+	}
+	document.getElementById("search-name").placeholder = placeholder;
+}
+
+function reloadPage(){
+	location.href = "/my-account/orders/";
+}
+</script>
+<form action="" method="post">
+	<div class="input-group" style="float:left;width:100%; margin-bottom: 20px;">
+		<div class="form-outline">
+			<input type="search" id="search-name" class="form-control" placeholder="<?php echo $placeholder; ?>" name="search-id" value='<?php echo $searchText; ?>' style="width: 53%; margin-right:10px;">
+
+			<select name="search-by" id="search-by-order-category" onchange="changeSearchPlaceholder( this.value )" style="width:30%; padding: 11px 0px; margin-right: 10px;">
+				<option value="">Search By</option>
+				<option value="product-name" <?php if( $search_by == "product-name" ){ echo "selected";} ?>>Product Name</option>
+				<option value="sku" <?php if( $search_by == "sku" ){ echo "selected";} ?>>SKU</option>
+				<option value="serial-number" <?php if( $search_by == "serial-number" ){ echo "selected";} ?>>Serial Number</option>
+			</select>
+
+			<button type="submit" class="btn" name="search-orders">
+				<i class="fas fa-search" aria-hidden="true"></i>
+			</button>
+
+			<button type="button" class="btn" onclick="reloadPage();">
+				<i class="fa fa-refresh" aria-hidden="true"></i>
+			</button>
 		</div>
-	</form>
+	</div>
+</form>
 	
-	<!-- <p style="float: right; font-size: 25px;"> 
-		<span style="font-weight:bold">Total Balance:</span> $ <?php //echo number_format((float)$total, 2, '.', '');?><br><span style="font-weight:bold">Open Invoice Balance:</span> $ <?php //echo number_format((float)$total1, 2, '.', '');?>
-	</p> -->
-	<p style="float: right; font-size: 25px;">
-		<span style="font-weight:bold">Outstanding Invoice Balance:</span> $ <?php echo number_format((float)$total1, 2, '.', '');?>
-	</p>
-	<table class="woocommerce-orders-table woocommerce-MyAccount-orders shop_table shop_table_responsive my_account_orders account-orders-table">
+<!-- <p style="float: right; font-size: 25px;"> 
+	<span style="font-weight:bold">Total Balance:</span> $ <?php //echo number_format((float)$total, 2, '.', '');?><br><span style="font-weight:bold">Open Invoice Balance:</span> $ <?php //echo number_format((float)$total1, 2, '.', '');?>
+</p> -->
+<p style="float: right; font-size: 25px; ">
+	<span style="font-weight:bold">Outstanding Invoice Balance:</span> $ <?php echo number_format((float)$total1, 2, '.', '');?>
+</p>
+<table class="woocommerce-orders-table woocommerce-MyAccount-orders shop_table shop_table_responsive my_account_orders account-orders-table">
 
-		<thead>
-			<tr>
-				<?php foreach ( wc_get_account_orders_columns() as $column_id => $column_name ){ ?>
-					<th class="woocommerce-orders-table__header woocommerce-orders-table__header-<?php echo esc_attr( $column_id ); ?>">
-						<span class="nobr"><?php echo esc_html( $column_name ); ?></span>
-					</th>
-				<?php } ?>
-			</tr>
-		</thead>
+	<thead>
+		<tr>
+			<?php foreach ( wc_get_account_orders_columns() as $column_id => $column_name ){ ?>
+				<th class="woocommerce-orders-table__header woocommerce-orders-table__header-<?php echo esc_attr( $column_id ); ?>">
+					<span class="nobr"><?php echo esc_html( $column_name ); ?></span>
+				</th>
+			<?php } ?>
+		</tr>
+	</thead>
 
-		<tbody>
-			<?php
-			foreach ( $customer_orders->orders as $customer_order ) {
-				$order      = wc_get_order( $customer_order ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-				$item_count = $order->get_item_count() - $order->get_item_count_refunded();
-				$order_id = $order->get_id();
-                $purchase_number = get_field( "purchase_number", $order_id );
-                $order_status = $order->get_status();
-				$order_number = $order->get_order_number();
-				$qo_number = str_replace("SO", "QO", $order_number);
-                if($order_status == 'quote'){
-                    $purchase_number = $qo_number;
-                }else{
-                	$purchase_number = 'PO'.$purchase_number;
-                }
-	            $invoice = wcpdf_get_document( 'invoice', $order );
-				if ( $invoice && $invoice->exists() ) {
-					$invoice_number = $invoice->get_number();
-				}else{
-					$invoice_number = "";
-				}
-				?>
-				<tr class="woocommerce-orders-table__row woocommerce-orders-table__row--status-<?php echo esc_attr( $order->get_status() ); ?> order">
-					<?php foreach ( wc_get_account_orders_columns() as $column_id => $column_name ) : ?>
-					
-						<td class="<?php echo $column_id." ".$column_name."_".$order->get_status();?> woocommerce-orders-table__cell woocommerce-orders-table__cell-<?php echo esc_attr( $column_id ); ?>" data-title="<?php echo esc_attr( $column_name ); ?>">
-							<?php if ( has_action( 'woocommerce_my_account_my_orders_column_' . $column_id ) ) : ?>
-								<?php do_action( 'woocommerce_my_account_my_orders_column_' . $column_id, $order ); ?>
-
-							<?php elseif ( 'purchase_number' === $column_id ) : ?>
-								<a href="<?php echo esc_url( $order->get_view_order_url() ); ?>">
-									<?php echo esc_html( _x( '#', 'hash before order number', 'woocommerce' ) . $purchase_number ); ?>
-								</a>
-							
-							<?php elseif ( 'order-date' === $column_id ) : ?>
-								<time datetime="<?php echo esc_attr( $order->get_date_created()->date( 'c' ) ); ?>"><?php echo esc_html( wc_format_datetime( $order->get_date_created() ) ); ?></time>
-
-							<?php elseif ( 'order-status' === $column_id ) : ?>
-							<?php echo esc_html( wc_get_order_status_name( $order->get_status() ) ); ?>
-							<?php elseif ( 'invoice_number' == $column_id ) : ?>
-							<?php echo esc_html( _x( '', 'hash before order number', 'woocommerce' ) . $invoice_number ); ?>
-							<?php elseif ( 'order-total' === $column_id ) : ?>
-								<?php
-								/* translators: 1: formatted order total 2: total order items */
-								echo wp_kses_post( sprintf( _n( '%1$s for %2$s item', '%1$s for %2$s items', $item_count, 'woocommerce' ), $order->get_formatted_order_total(), $item_count ) );
-								?>
-
-							<?php elseif ( 'order-actions' === $column_id ) : ?>
-								<?php
-								$actions = wc_get_account_orders_actions( $order );
-
-								if ( ! empty( $actions ) ) {
-									foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-										echo '<a href="' . esc_url( $action['url'] ) . '" class="woocommerce-button button ' . sanitize_html_class( $key ) . '">' . esc_html( $action['name'] ) . '</a>';
-									}
-								}
-								?>
-							<?php
-								if($order_status == 'quote'){
-								  ?>
-							        <div class="accept-po">
-										<input type="text" name="po_number" placeholder="Enter PO Number" class="po_number_<?php echo $order_id;?> po_number" >
-									<input class="acp-button" type="submit" value="Accept" onclick="test(<?php echo $order_id;?>)" >
-							</div>	
-								  <?php 
-								}
-								?>
-							<?php endif; ?>
-						</td>
-					    
-					<?php endforeach; ?>
-				</tr>
-				<?php
+	<tbody>
+		<?php
+		foreach ( $customer_orders->orders as $customer_order ) {
+			$order      = wc_get_order( $customer_order ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$item_count = $order->get_item_count() - $order->get_item_count_refunded();
+			$order_id = $order->get_id();
+			$purchase_number = get_field( "purchase_number", $order_id );
+			$order_status = $order->get_status();
+			$order_number = $order->get_order_number();
+			$qo_number = str_replace("SO", "QO", $order_number);
+			if($order_status == 'quote'){
+				$purchase_number = $qo_number;
+			}else{
+				$purchase_number = 'PO'.$purchase_number;
+			}
+			$invoice = wcpdf_get_document( 'invoice', $order );
+			if ( $invoice && $invoice->exists() ) {
+				$invoice_number = $invoice->get_number();
+			}else{
+				$invoice_number = "";
 			}
 			?>
-		</tbody>
-	</table>
+			<tr class="woocommerce-orders-table__row woocommerce-orders-table__row--status-<?php echo esc_attr( $order->get_status() ); ?> order">
+				<?php foreach ( wc_get_account_orders_columns() as $column_id => $column_name ) : ?>
+				
+					<td class="<?php echo $column_id." ".$column_name."_".$order->get_status();?> woocommerce-orders-table__cell woocommerce-orders-table__cell-<?php echo esc_attr( $column_id ); ?>" data-title="<?php echo esc_attr( $column_name ); ?>">
+						<?php if ( has_action( 'woocommerce_my_account_my_orders_column_' . $column_id ) ) : ?>
+							<?php do_action( 'woocommerce_my_account_my_orders_column_' . $column_id, $order ); ?>
 
-	<?php do_action( 'woocommerce_before_account_orders_pagination' ); ?>
+						<?php elseif ( 'purchase_number' === $column_id ) : ?>
+							<a href="<?php echo esc_url( $order->get_view_order_url() ); ?>">
+								<?php echo esc_html( _x( '#', 'hash before order number', 'woocommerce' ) . $purchase_number ); ?>
+							</a>
+						
+						<?php elseif ( 'order-date' === $column_id ) : ?>
+							<time datetime="<?php echo esc_attr( $order->get_date_created()->date( 'c' ) ); ?>"><?php echo esc_html( wc_format_datetime( $order->get_date_created() ) ); ?></time>
 
-	<?php if ( 1 < $customer_orders->max_num_pages ) : ?>
-		<div class="woocommerce-pagination woocommerce-pagination--without-numbers woocommerce-Pagination">
-			<?php if ( 1 !== $current_page ) : ?>
-				<a class="woocommerce-button woocommerce-button--previous woocommerce-Button woocommerce-Button--previous button" href="<?php echo esc_url( wc_get_endpoint_url( 'orders', $current_page - 1 ) ); ?>"><?php esc_html_e( 'Previous', 'woocommerce' ); ?></a>
-			<?php endif; ?>
-			<?php if ( intval( $customer_orders->max_num_pages ) !== $current_page ) : ?>
-				<a class="woocommerce-button woocommerce-button--next woocommerce-Button woocommerce-Button--next button" href="<?php echo esc_url( wc_get_endpoint_url( 'orders', $current_page + 1 ) ); ?>"><?php esc_html_e( 'Next', 'woocommerce' ); ?></a>
-			<?php endif; ?>
-		</div>
-	<?php endif; ?>
+						<?php elseif ( 'order-status' === $column_id ) : ?>
+						<?php echo esc_html( wc_get_order_status_name( $order->get_status() ) ); ?>
+						<?php elseif ( 'invoice_number' == $column_id ) : ?>
+						<?php echo esc_html( _x( '', 'hash before order number', 'woocommerce' ) . $invoice_number ); ?>
+						<?php elseif ( 'order-total' === $column_id ) : ?>
+							<?php
+							/* translators: 1: formatted order total 2: total order items */
+							echo wp_kses_post( sprintf( _n( '%1$s for %2$s item', '%1$s for %2$s items', $item_count, 'woocommerce' ), $order->get_formatted_order_total(), $item_count ) );
+							?>
+
+						<?php elseif ( 'order-actions' === $column_id ) : ?>
+							<?php
+							$actions = wc_get_account_orders_actions( $order );
+
+							if ( ! empty( $actions ) ) {
+								foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+									echo '<a href="' . esc_url( $action['url'] ) . '" class="woocommerce-button button ' . sanitize_html_class( $key ) . '">' . esc_html( $action['name'] ) . '</a>';
+								}
+							}
+							?>
+						<?php
+							if($order_status == 'quote'){
+								?>
+								<div class="accept-po">
+									<input type="text" name="po_number" placeholder="Enter PO Number" class="po_number_<?php echo $order_id;?> po_number" >
+								<input class="acp-button" type="submit" value="Accept" onclick="test(<?php echo $order_id;?>)" >
+						</div>	
+								<?php 
+							}
+							?>
+						<?php endif; ?>
+					</td>
+					
+				<?php endforeach; ?>
+			</tr>
+			<?php
+		}
+		?>
+	</tbody>
+</table>
+
+<?php do_action( 'woocommerce_before_account_orders_pagination' ); ?>
+
+<?php if ( 1 < $customer_orders->max_num_pages ) : ?>
+	<div class="woocommerce-pagination woocommerce-pagination--without-numbers woocommerce-Pagination">
+		<?php if ( 1 !== $current_page ) : ?>
+			<a class="woocommerce-button woocommerce-button--previous woocommerce-Button woocommerce-Button--previous button" href="<?php echo esc_url( wc_get_endpoint_url( 'orders', $current_page - 1 ) ); ?>"><?php esc_html_e( 'Previous', 'woocommerce' ); ?></a>
+		<?php endif; ?>
+		<?php if ( intval( $customer_orders->max_num_pages ) !== $current_page ) : ?>
+			<a class="woocommerce-button woocommerce-button--next woocommerce-Button woocommerce-Button--next button" href="<?php echo esc_url( wc_get_endpoint_url( 'orders', $current_page + 1 ) ); ?>"><?php esc_html_e( 'Next', 'woocommerce' ); ?></a>
+		<?php endif; ?>
+	</div>
+<?php endif; ?>
 
 <?php else : ?>
 	<div class="woocommerce-message woocommerce-message--info woocommerce-Message woocommerce-Message--info woocommerce-info">
